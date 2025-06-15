@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import json
+import re
 from main import (
     initialize_services,
     load_and_prepare_data,
@@ -42,6 +43,42 @@ def get_available_ollama_models():
     except Exception as e:
         st.error(f"Could not connect to Ollama: {e}")
         return []
+
+def parse_llm_response(response: str):
+    """
+    Parses the LLM response to extract thinking process and main content.
+    Returns a tuple: (thinking_content, main_content)
+    """
+    # Use regex to find content between <think> and </think> tags
+    think_pattern = r'<think>(.*?)</think>'
+    match = re.search(think_pattern, response, re.DOTALL)
+    
+    if match:
+        thinking_content = match.group(1).strip()
+        # Remove the thinking tags and content from the main response
+        main_content = re.sub(think_pattern, '', response, flags=re.DOTALL).strip()
+        return thinking_content, main_content
+    else:
+        # No thinking tags found, return empty thinking and full response as main
+        return None, response.strip()
+
+def display_llm_response(response: str, title: str = "Réponse:"):
+    """
+    Displays the LLM response with thinking process in an expander and main content prominently.
+    """
+    thinking_content, main_content = parse_llm_response(response)
+    
+    # Display main content
+    st.subheader(title)
+    if main_content:
+        st.write(main_content)
+    else:
+        st.warning("Aucun contenu principal trouvé dans la réponse.")
+    
+    # Display thinking process if available
+    if thinking_content:
+        with st.expander("🤔 Processus de réflexion du modèle"):
+            st.write(thinking_content)
 
 # --- MAIN APP ---
 st.title("⚖️ Assistant Juridique Marocain (Preuve de Concept)")
@@ -121,7 +158,7 @@ if st.session_state.services_initialized and st.session_state.data_indexed:
         user_request_gen = st.text_area(
             "Votre demande:", 
             height=150,
-            placeholder="Exemple: 'Je veux une clause pour un contrat de prêt de 5000 MAD entre deux personnes, sans intérêts, remboursable en 10 mois.'"
+            placeholder="Exemple: 'Je veux un contrat de prêt de 5000 MAD entre deux personnes, sans intérêts, remboursable en 10 mois.'"
         )
 
         if st.button("Générer le brouillon"):
@@ -137,7 +174,14 @@ if st.session_state.services_initialized and st.session_state.data_indexed:
                     response = get_llm_response(st.session_state.llm_pipeline, prompt, model=selected_model)
 
                 st.success("Brouillon Généré:", icon="📄")
-                st.markdown(response)
+                # st.markdown(response)
+
+                # Display results with thinking process parsing
+                display_llm_response(response, "Clause Générée:")
+                        
+                # Show context used
+                with st.expander("📚 Contexte juridique utilisé"):
+                    st.text(context)
             else:
                 st.error("Veuillez entrer une description de votre besoin.")
 
