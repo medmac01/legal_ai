@@ -27,7 +27,7 @@ def initialize_services():
     return pc, embedding_model, llm_pipeline
 
 # --- DATA & PINECONE MANAGEMENT ---
-def load_and_prepare_data(filepath="data/dummy_moroccan_law.json"):
+def load_and_prepare_data(filepath="data/law-67-12.json"):
     """Loads legal articles from a JSON file."""
     with open(filepath, 'r', encoding='utf-8') as f:
         return json.load(f)
@@ -67,7 +67,7 @@ def embed_and_upsert(index, data, model):
     print(f"Upserted {len(vectors_to_upsert)} vectors.")
 
 # --- RETRIEVAL-AUGMENTED GENERATION (RAG) ---
-def retrieve_context(query, index, model, top_k=3):
+def retrieve_context(query, index, model, top_k=6):
     """Retrieves relevant legal context from Pinecone."""
     query_embedding = model.encode(query).tolist()
     results = index.query(vector=query_embedding, top_k=top_k, include_metadata=True)
