@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import json
 import re
+from datetime import datetime
 from main import (
     initialize_services,
     load_and_prepare_data,
@@ -79,6 +80,37 @@ def display_llm_response(response: str, title: str = "Réponse:"):
     if thinking_content:
         with st.expander("🤔 Processus de réflexion du modèle"):
             st.write(thinking_content)
+
+def save_contract_to_md(prompt: str, response: str):
+    """Save the generated contract to a markdown file with timestamp"""
+    # Create inference_examples folder if it doesn't exist
+    thinking_content, main_content = parse_llm_response(response)
+
+    os.makedirs("inference_examples", exist_ok=True)
+    
+    # Generate filename with datetime suffix
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"contract_{timestamp}.md"
+    filepath = os.path.join("inference_examples", filename)
+    
+    # Create markdown content
+    md_content = f"""## Prompt
+{prompt}
+
+## Reasoning Trace
+{thinking_content}
+
+## Generated Contract
+{main_content}
+"""
+    
+    # Save to file
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(md_content)
+    
+    print("Contract saved to:", filepath)
+    
+    return filepath
 
 # --- MAIN APP ---
 st.title("⚖️ Assistant Juridique Marocain (Preuve de Concept)")
@@ -178,6 +210,8 @@ if st.session_state.services_initialized and st.session_state.data_indexed:
 
                 # Display results with thinking process parsing
                 display_llm_response(response, "Clause Générée:")
+
+                save_contract_to_md(prompt, response)
                         
                 # Show context used
                 with st.expander("📚 Contexte juridique utilisé"):
