@@ -124,7 +124,7 @@ st.warning(
 
 # --- SETUP & INITIALIZATION ---
 st.sidebar.header("Configuration")
-st.session_state.pinecone_api_key = st.sidebar.text_input("Clé API Pinecone", type="password")
+# st.session_state.pinecone_api_key = st.sidebar.text_input("Clé API Pinecone", type="password")
 
 # Get available Ollama models
 available_models = get_available_ollama_models()
@@ -145,8 +145,9 @@ selected_model = st.sidebar.selectbox(
 st.sidebar.info(f"Modèle sélectionné: {selected_model}")
 
 if st.sidebar.button("Initialiser les Services"):
-    if st.session_state.pinecone_api_key:
-        os.environ["PINECONE_API_KEY"] = st.session_state.pinecone_api_key
+    if 1:
+    # if st.session_state.pinecone_api_key:
+        # os.environ["PINECONE_API_KEY"] = st.session_state.pinecone_api_key
         os.environ["OLLAMA_MODEL"] = selected_model
         with st.spinner("Initialisation des services... Veuillez patienter."):
             try:
@@ -159,22 +160,23 @@ if st.sidebar.button("Initialiser les Services"):
         st.sidebar.warning("Veuillez entrer votre clé API Pinecone.")
 
 if st.session_state.services_initialized:
-    if st.sidebar.button("Indexer les Données Juridiques"):
-        with st.spinner("Création de l'index et indexation des données..."):
-            try:
-                # 1. Create index if it doesn't exist
-                create_pinecone_index_if_not_exists(st.session_state.pc)
-                st.session_state.pinecone_index = st.session_state.pc.Index("legalai")
+    # pass
+    # if st.sidebar.button("Indexer les Données Juridiques"):
+    #     with st.spinner("Création de l'index et indexation des données..."):
+    #         try:
+    #             # 1. Create index if it doesn't exist
+    #             create_pinecone_index_if_not_exists(st.session_state.pc)
+    st.session_state.pinecone_index = st.session_state.pc.Index("legalai")
                 
-                # 2. Load data
-                legal_data = load_and_prepare_data()
+    #             # 2. Load data
+    #             legal_data = load_and_prepare_data()
                 
-                # 3. Embed and upsert data
-                embed_and_upsert(st.session_state.pinecone_index, legal_data, st.session_state.embedding_model)
-                st.session_state.data_indexed = True
-                st.sidebar.success("Données indexées avec succès !")
-            except Exception as e:
-                st.sidebar.error(f"Erreur d'indexation: {e}")
+    #             # 3. Embed and upsert data
+    #             embed_and_upsert(st.session_state.pinecone_index, legal_data, st.session_state.embedding_model)
+    st.session_state.data_indexed = True
+                # st.sidebar.success("Données indexées avec succès !")
+    #         except Exception as e:
+    #             st.sidebar.error(f"Erreur d'indexation: {e}")
 else:
     st.info("Veuillez initialiser les services via la barre latérale pour commencer.")
 
@@ -203,7 +205,7 @@ if st.session_state.services_initialized and st.session_state.data_indexed:
 
                 with st.spinner("Génération du brouillon par l'IA..."):
                     prompt = build_prompt(user_request_gen, context, task_type="generate")
-                    response = get_llm_response(st.session_state.llm_pipeline, prompt, model=selected_model)
+                    response = get_llm_response(st.session_state.llm_pipeline, prompt, model=selected_model, mode="chat")
 
                 st.success("Brouillon Généré:", icon="📄")
                 # st.markdown(response)

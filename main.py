@@ -83,7 +83,7 @@ def build_prompt(user_request, context, task_type="generate"):
     if task_type == "generate":
         system_message = """
         Vous êtes un assistant juridique spécialisé dans le droit marocain.
-        Votre tâche est de générer des clauses de contrat ou des contrats complets.
+        Votre tâche est de générer des contrats complets.
         La génération doit etre en français, il sera bien de reflechir étape par étape (aussi en français si possible).
         Vous devez utiliser le contexte juridique fourni pour vous assurer que la clause est conforme aux lois marocaines.
         Vous devez également vous assurer que la clause répond aux besoins de l'entreprise.
@@ -123,7 +123,7 @@ def build_prompt(user_request, context, task_type="generate"):
     prompt = f"<|system|>\n{system_message}</s>\n<|user|>\n{human_message}</s>\n<|assistant|>"
     return prompt
 
-def get_llm_response(llm_pipeline: Client, prompt: str, model: str = None):
+def get_llm_response(llm_pipeline: Client, prompt: str, model: str = None, mode= "generate"):
     """Gets a response from the LLM using the specified model."""
     if model is None:
         model = OLLAMA_MODEL
@@ -131,8 +131,24 @@ def get_llm_response(llm_pipeline: Client, prompt: str, model: str = None):
             raise ValueError("No model specified and OLLAMA_MODEL environment variable is not set")
     
     print(f"Generating LLM response with model: {model}")
-    sequences = llm_pipeline.generate(
-        model=model,
-        prompt=prompt,
-    )
+    if mode == "chat":
+        chat_template = [
+            {
+                'role': 'user',
+                'content': prompt,
+            },
+        ]
+
+        sequences = llm_pipeline.chat(
+            model=model,
+            messages=chat_template,
+            keep_alive=100,
+        )
+        return sequences.message['content']
+    else:
+        # Default to generate mode
+        sequences = llm_pipeline.generate(
+            model=model,
+            prompt=prompt,
+        )
     return sequences['response']
